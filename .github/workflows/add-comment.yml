@@ -1,0 +1,29 @@
+name: Add Comment
+on:
+  repository_dispatch:
+    types: [add-comment]
+
+jobs:
+  add-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Read and update json
+        run: |
+          # 获取提交的留言内容
+          COMMENT=$(echo '${{ toJson(github.event.client_payload) }}')
+          # 读取现有文件
+          CONTENT=$(cat data/comments.json)
+          # 拼接新数据
+          NEW_CONTENT=$(echo "$CONTENT" | jq --argjson c "$COMMENT" '.list += [$c]')
+          echo "$NEW_CONTENT" > data/comments.json
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "新增匿名留言"
+          committer_name: GitHub Actions
+          committer_email: actions@github.com
